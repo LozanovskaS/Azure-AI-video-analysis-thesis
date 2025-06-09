@@ -1,0 +1,194 @@
+<div class="matches-container">
+  <div class="matches-header">
+    <div class="header-content">
+      <div class="title-section">
+        <mat-icon class="header-icon">video_library</mat-icon>
+        <div>
+          <h1>Match Library</h1>
+          <p>Browse and analyze your processed tennis matches</p>
+        </div>
+      </div>
+      
+      <div class="stats-section">
+        <div class="stat-card">
+          <mat-icon>library_books</mat-icon>
+          <div class="stat-content">
+            <span class="stat-number">{{ getMatchesCount().total }}</span>
+            <span class="stat-label">Total Matches</span>
+          </div>
+        </div>
+        
+        <div class="stat-card completed">
+          <mat-icon>check_circle</mat-icon>
+          <div class="stat-content">
+            <span class="stat-number">{{ getMatchesCount().completed }}</span>
+            <span class="stat-label">Completed</span>
+          </div>
+        </div>
+        
+        <div class="stat-card processing" *ngIf="getMatchesCount().processing > 0">
+          <mat-icon>hourglass_empty</mat-icon>
+          <div class="stat-content">
+            <span class="stat-number">{{ getMatchesCount().processing }}</span>
+            <span class="stat-label">Processing</span>
+          </div>
+        </div>
+        
+        <div class="stat-card failed" *ngIf="getMatchesCount().failed > 0">
+          <mat-icon>error</mat-icon>
+          <div class="stat-content">
+            <span class="stat-number">{{ getMatchesCount().failed }}</span>
+            <span class="stat-label">Failed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="filters-section">
+    <mat-card class="filters-card">
+      <div class="filters-content">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Search matches</mat-label>
+          <input matInput 
+                 [(ngModel)]="searchTerm" 
+                 (input)="onSearch()"
+                 placeholder="Search by title, player, or video ID...">
+          <mat-icon matSuffix>search</mat-icon>
+        </mat-form-field>
+
+        <div class="status-filters">
+          <button mat-stroked-button 
+                  [class.active]="selectedStatus === 'all'"
+                  (click)="onStatusFilter('all')">
+            <mat-icon>select_all</mat-icon>
+            All
+          </button>
+          
+          <button mat-stroked-button 
+                  [class.active]="selectedStatus === 'completed'"
+                  (click)="onStatusFilter('completed')">
+            <mat-icon>check_circle</mat-icon>
+            Completed
+          </button>
+          
+          <button mat-stroked-button 
+                  [class.active]="selectedStatus === 'processing'"
+                  (click)="onStatusFilter('processing')">
+            <mat-icon>hourglass_empty</mat-icon>
+            Processing
+          </button>
+          
+          <button mat-stroked-button 
+                  [class.active]="selectedStatus === 'failed'"
+                  (click)="onStatusFilter('failed')">
+            <mat-icon>error</mat-icon>
+            Failed
+          </button>
+        </div>
+
+        <button mat-raised-button 
+                color="primary" 
+                (click)="loadMatches()"
+                [disabled]="isLoading">
+          <mat-icon>refresh</mat-icon>
+          Refresh
+        </button>
+      </div>
+    </mat-card>
+  </div>
+
+  <div *ngIf="isLoading" class="loading-section">
+    <mat-card class="loading-card">
+      <div class="loading-content">
+        <mat-spinner diameter="40"></mat-spinner>
+        <h3>Loading matches...</h3>
+        <p>Please wait while we fetch your match library</p>
+      </div>
+    </mat-card>
+  </div>
+
+  <div *ngIf="!isLoading && filteredMatches.length > 0" class="matches-grid">
+    <mat-card *ngFor="let match of filteredMatches" class="match-card">
+
+      <div class="match-thumbnail">
+        <img [src]="getThumbnailUrl(match.video_id)" 
+             [alt]="match.title"
+             loading="lazy">
+        <div class="status-overlay">
+          <mat-icon [style.color]="getStatusColor(match.status)">
+            {{ getStatusIcon(match.status) }}
+          </mat-icon>
+        </div>
+        <div class="duration-overlay" *ngIf="match.duration">
+          {{ formatDuration(match.duration) }}
+        </div>
+      </div>
+
+      <mat-card-content class="match-info">
+        <h3 class="match-title">{{ match.title }}</h3>
+        
+        <div class="tournament-info" *ngIf="match.tournament">
+          <mat-icon>emoji_events</mat-icon>
+          <span>{{ match.tournament }}</span>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions class="match-actions">
+        <button mat-raised-button 
+                color="primary"
+                (click)="analyzeMatch(match)"
+                [disabled]="match.status !== 'completed'">
+          <mat-icon>psychology</mat-icon>
+          Analyze
+        </button>
+
+        <button mat-button 
+                (click)="viewOnYouTube(match.video_id)">
+          <mat-icon>play_circle</mat-icon>
+          YouTube
+        </button>
+
+        <button mat-button 
+                color="warn"
+                (click)="deleteMatch(match)">
+          <mat-icon>delete</mat-icon>
+          Delete
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div *ngIf="!isLoading && filteredMatches.length === 0" class="empty-state">
+    <mat-card>
+      <mat-card-content>
+        <div class="empty-content">
+          <mat-icon class="empty-icon">video_library</mat-icon>
+          <h3>No matches found</h3>
+          <p *ngIf="searchTerm || selectedStatus !== 'all'">
+            Try adjusting your search or filter criteria.
+          </p>
+          <p *ngIf="!searchTerm && selectedStatus === 'all' && matches.length === 0">
+            Upload some tennis matches to get started with AI analysis.
+          </p>
+          
+          <div class="empty-actions">
+            <button mat-raised-button 
+                    color="primary" 
+                    (click)="goToUpload()">
+              <mat-icon>cloud_upload</mat-icon>
+              Upload Match
+            </button>
+            
+            <button mat-stroked-button 
+                    (click)="clearFilters()"
+                    *ngIf="searchTerm || selectedStatus !== 'all'">
+              <mat-icon>clear</mat-icon>
+              Clear Filters
+            </button>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

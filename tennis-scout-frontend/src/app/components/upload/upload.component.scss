@@ -1,0 +1,250 @@
+.upload-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.upload-card {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(74, 222, 128, 0.2);
+  border-radius: 16px !important;
+  backdrop-filter: blur(10px);
+  color: white;
+
+  .mat-mdc-card-header {
+    padding-bottom: 16px;
+    
+    .header-icon {
+      background: linear-gradient(135deg, #4ade80, #22c55e);
+      color: #1a1a2e;
+      border-radius: 50%;
+      padding: 8px;
+      font-size: 24px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+}
+
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.input-section {
+  .full-width {
+    width: 100%;
+  }
+
+  ::ng-deep {
+    .mat-mdc-form-field {
+      .mat-mdc-text-field-wrapper {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+      }
+      
+      .mat-mdc-form-field-label {
+        color: rgba(255, 255, 255, 0.8) !important;
+      }
+      
+      .mat-mdc-input-element {
+        color: white !important;
+      }
+      
+      .mat-mdc-form-field-hint {
+        color: rgba(255, 255, 255, 0.6) !important;
+      }
+      
+      .mat-mdc-form-field-error {
+        color: #ef4444 !important;
+      }
+      
+      &.error {
+        .mat-mdc-text-field-wrapper {
+          border: 2px solid #ef4444;
+        }
+      }
+    }
+  }
+}
+
+.test-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  
+  button {
+    flex: 1;
+    min-width: 200px;
+    
+    mat-icon {
+      margin-right: 8px;
+    }
+  }
+}
+
+.submit-section {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  
+  .submit-button {
+    flex: 1;
+    min-width: 200px;
+    padding: 12px 24px;
+    font-size: 16px;
+    font-weight: 600;
+    
+    mat-icon, mat-spinner {
+      margin-right: 8px;
+    }
+  }
+}
+
+.success-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  border-radius: 8px;
+  color: #22c55e;
+  margin-top: 16px;
+  
+  mat-icon {
+    color: #22c55e;
+  }
+}
+
+.error-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  border-radius: 8px;
+  color: #ef4444;
+  margin-top: 16px;
+  
+  mat-icon {
+    color: #ef4444;
+  }
+  
+  span {
+    flex: 1;
+  }
+  
+  button {
+    color: #ef4444;
+    min-width: auto;
+    padding: 4px;
+  }
+}
+
+.processing-info {
+  margin-top: 32px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(74, 222, 128, 0.1);
+  
+  h3 {
+    color: #4ade80;
+    margin: 0 0 16px 0;
+    font-size: 1.2rem;
+  }
+}
+
+.steps-preview {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.step-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  
+  mat-icon {
+    color: #4ade80;
+    font-size: 20px;
+  }
+  
+  span {
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
+
+.processing-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+  margin: 0;
+  
+  mat-icon {
+    color: #4ade80;
+    font-size: 18px;
+  }
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .upload-container {
+    padding: 16px;
+  }
+  
+  .test-buttons {
+    flex-direction: column;
+    
+    button {
+      min-width: 100%;
+    }
+  }
+  
+  .submit-section {
+    flex-direction: column;
+    
+    .submit-button {
+      min-width: 100%;
+    }
+  }
+}
+
+::ng-deep {
+  .mat-mdc-card-title {
+    color: white !important;
+  }
+  
+  .mat-mdc-card-subtitle {
+    color: rgba(255, 255, 255, 0.7) !important;
+  }
+  
+  .success-snackbar {
+    background: rgba(34, 197, 94, 0.9) !important;
+    color: white !important;
+  }
+  
+  .warning-snackbar {
+    background: rgba(245, 158, 11, 0.9) !important;
+    color: white !important;
+  }
+  
+  .error-snackbar {
+    background: rgba(239, 68, 68, 0.9) !important;
+    color: white !important;
+  }
+}

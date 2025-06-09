@@ -1,0 +1,301 @@
+<div class="analysis-container">
+  <mat-card class="analysis-card">
+    <mat-card-header>
+      <div mat-card-avatar>
+        <mat-icon class="header-icon">psychology</mat-icon>
+      </div>
+      <mat-card-title>AI Tennis Analysis</mat-card-title>
+      <mat-card-subtitle>Ask questions about tennis matches and get AI-powered insights</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="analysisForm" (ngSubmit)="onSubmit()" class="question-form">
+        <div class="input-section">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Your Tennis Question</mat-label>
+            <textarea matInput 
+                     formControlName="question"
+                     placeholder="Ask specific questions about tennis matches..."
+                     rows="3"
+                     [class.error]="analysisForm.get('question')?.invalid && analysisForm.get('question')?.touched">
+            </textarea>
+            <mat-icon matSuffix>help_outline</mat-icon>
+            <mat-hint>Example: What are Alcaraz's serving patterns on break points?</mat-hint>
+            <mat-error *ngIf="analysisForm.get('question')?.hasError('required')">
+              Please enter a question
+            </mat-error>
+            <mat-error *ngIf="analysisForm.get('question')?.hasError('minlength')">
+              Question must be at least 5 characters long
+            </mat-error>
+            <mat-error *ngIf="analysisForm.get('question')?.hasError('maxlength')">
+              Question is too long (max 500 characters)
+            </mat-error>
+          </mat-form-field>
+
+          <div class="submit-section">
+            <button type="submit" 
+                    mat-raised-button 
+                    color="primary" 
+                    [disabled]="analysisForm.invalid || isAnalyzing"
+                    class="analyze-button">
+              <mat-icon *ngIf="!isAnalyzing">search</mat-icon>
+              <mat-spinner *ngIf="isAnalyzing" diameter="20"></mat-spinner>
+              {{ isAnalyzing ? 'Analyzing...' : 'Generate Analysis' }}
+            </button>
+          </div>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+
+  <div *ngIf="latestResult" class="latest-result-section">
+    <h2>Latest Analysis</h2>
+    
+    <mat-card class="latest-result-card">
+      <mat-card-header>
+        <div mat-card-avatar>
+          <mat-icon class="result-icon">quiz</mat-icon>
+        </div>
+        <mat-card-title>Fresh Analysis</mat-card-title>
+        <mat-card-subtitle>{{ getRelativeTime(latestResult.timestamp) }}</mat-card-subtitle>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="question-section">
+          <h4>
+            <mat-icon>help_outline</mat-icon>
+            Question:
+          </h4>
+          <p class="question-text">{{ latestResult.question }}</p>
+        </div>
+
+        <div class="response-section">
+          <h4>
+            <mat-icon>psychology</mat-icon>
+            AI Analysis:
+          </h4>
+          <div class="response-text" [innerHTML]="formatResponse(latestResult.response)"></div>
+        </div>
+
+        <div *ngIf="latestResult.players_detected && latestResult.players_detected.length > 0" 
+             class="players-section">
+          <h4>
+            <mat-icon>person</mat-icon>
+            Players Analyzed:
+          </h4>
+          <div class="players-chips">
+            <mat-chip *ngFor="let player of latestResult.players_detected">
+              {{ player }}
+            </mat-chip>
+          </div>
+        </div>
+
+        <div *ngIf="latestResult.sources && latestResult.sources.length > 0" 
+             class="sources-section">
+          <h4>
+            <mat-icon>video_library</mat-icon>
+            Match Sources:
+          </h4>
+          <div class="sources-list">
+            <div *ngFor="let source of latestResult.sources" class="source-item">
+              <mat-icon>play_circle</mat-icon>
+              <div class="source-details">
+                <span class="source-title">{{ source.title }}</span>
+                <span class="source-id">Video ID: {{ source.video_id }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="stats-section">
+          <div class="stat-item">
+            <mat-icon>schedule</mat-icon>
+            <span>{{ latestResult.processing_time_ms }}ms</span>
+          </div>
+          <div class="stat-item" *ngIf="latestResult.total_matches_searched">
+            <mat-icon>search</mat-icon>
+            <span>{{ latestResult.total_matches_searched }} matches searched</span>
+          </div>
+          <div class="stat-item" *ngIf="latestResult.analysis_id">
+            <mat-icon>fingerprint</mat-icon>
+            <span>ID: {{ latestResult.analysis_id }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-button (click)="copyAnalysis(latestResult)">
+          <mat-icon>content_copy</mat-icon>
+          Copy
+        </button>
+        <button mat-button (click)="askFollowUp(latestResult.question)">
+          <mat-icon>reply</mat-icon>
+          Follow Up
+        </button>
+        <button mat-button (click)="viewAllResults()" *ngIf="analysisResults.length > 1">
+          <mat-icon>history</mat-icon>
+          View All ({{ analysisResults.length - 1 }} more)
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+
+  <div class="quick-questions-section" *ngIf="!isAnalyzing && !latestResult">
+    <mat-card>
+      <mat-card-content>
+        <h3>Quick Questions</h3>
+        <div class="quick-questions-grid">
+          <div class="quick-question" 
+               *ngFor="let question of quickQuestions"
+               (click)="setQuestion(question)">
+            <mat-icon>lightbulb</mat-icon>
+            <span>{{ question }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div class="player-questions-section" *ngIf="!isAnalyzing && !latestResult">
+    <mat-card>
+      <mat-card-content>
+        <h3>Popular Player Questions</h3>
+        <div class="player-tabs">
+          <button mat-stroked-button 
+                  *ngFor="let player of popularPlayers"
+                  [class.active]="selectedPlayer === player"
+                  (click)="selectPlayer(player)">
+            {{ player }}
+          </button>
+        </div>
+        
+        <div class="player-questions" *ngIf="selectedPlayer">
+          <div class="player-question"
+               *ngFor="let question of getPlayerQuestions(selectedPlayer)"
+               (click)="setQuestion(question)">
+            <mat-icon>sports_tennis</mat-icon>
+            <span>{{ question }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+
+  <div *ngIf="analysisResults.length > 1" class="all-results-section" [class.expanded]="showAllResults">
+    <div class="results-header" (click)="toggleAllResults()">
+      <h2>Analysis History ({{ analysisResults.length - 1 }} previous)</h2>
+      <mat-icon>{{ showAllResults ? 'expand_less' : 'expand_more' }}</mat-icon>
+    </div>
+    
+    <div class="results-content" *ngIf="showAllResults">
+      <div *ngFor="let result of getOlderResults(); let i = index" class="result-card">
+        <mat-card>
+          <mat-card-header>
+            <div mat-card-avatar>
+              <mat-icon class="result-icon">quiz</mat-icon>
+            </div>
+            <mat-card-title>Analysis #{{ analysisResults.length - i - 1 }}</mat-card-title>
+            <mat-card-subtitle>{{ getRelativeTime(result.timestamp) }}</mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <div class="question-section">
+              <h4>
+                <mat-icon>help_outline</mat-icon>
+                Question:
+              </h4>
+              <p class="question-text">{{ result.question }}</p>
+            </div>
+
+            <div class="response-section">
+              <h4>
+                <mat-icon>psychology</mat-icon>
+                AI Analysis:
+              </h4>
+              <div class="response-text" [innerHTML]="formatResponse(result.response)"></div>
+            </div>
+
+            <div *ngIf="result.players_detected && result.players_detected.length > 0" 
+                 class="players-section">
+              <h4>
+                <mat-icon>person</mat-icon>
+                Players Analyzed:
+              </h4>
+              <div class="players-chips">
+                <mat-chip *ngFor="let player of result.players_detected">
+                  {{ player }}
+                </mat-chip>
+              </div>
+            </div>
+
+            <div *ngIf="result.sources && result.sources.length > 0" 
+                 class="sources-section">
+              <h4>
+                <mat-icon>video_library</mat-icon>
+                Match Sources:
+              </h4>
+              <div class="sources-list">
+                <div *ngFor="let source of result.sources" class="source-item">
+                  <mat-icon>play_circle</mat-icon>
+                  <div class="source-details">
+                    <span class="source-title">{{ source.title }}</span>
+                    <span class="source-id">Video ID: {{ source.video_id }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="stats-section">
+              <div class="stat-item">
+                <mat-icon>schedule</mat-icon>
+                <span>{{ result.processing_time_ms }}ms</span>
+              </div>
+              <div class="stat-item" *ngIf="result.total_matches_searched">
+                <mat-icon>search</mat-icon>
+                <span>{{ result.total_matches_searched }} matches searched</span>
+              </div>
+              <div class="stat-item" *ngIf="result.analysis_id">
+                <mat-icon>fingerprint</mat-icon>
+                <span>ID: {{ result.analysis_id }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+
+          <mat-card-actions>
+            <button mat-button (click)="copyAnalysis(result)">
+              <mat-icon>content_copy</mat-icon>
+              Copy
+            </button>
+            <button mat-button (click)="askFollowUp(result.question)">
+              <mat-icon>reply</mat-icon>
+              Follow Up
+            </button>
+          </mat-card-actions>
+        </mat-card>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="analysisResults.length === 0 && !isAnalyzing" class="empty-state">
+    <mat-card>
+      <mat-card-content>
+        <div class="empty-content">
+          <mat-icon class="empty-icon">psychology</mat-icon>
+          <h3>Ready for Tennis Analysis</h3>
+          <p>Ask questions about tennis matches to get AI-powered insights from your uploaded videos.</p>
+          
+          <div class="example-questions">
+            <h4>Try asking about:</h4>
+            <ul>
+              <li>Player serving patterns and strategies</li>
+              <li>Weaknesses and strengths during pressure points</li>
+              <li>Movement patterns and court positioning</li>
+              <li>Shot selection in different game situations</li>
+              <li>Performance in tiebreaks and decisive moments</li>
+            </ul>
+          </div>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

@@ -1,0 +1,109 @@
+<div class="upload-container">
+  <mat-card class="upload-card">
+    <mat-card-header>
+      <div mat-card-avatar>
+        <mat-icon class="header-icon">cloud_upload</mat-icon>
+      </div>
+      <mat-card-title>Add Tennis Match</mat-card-title>
+      <mat-card-subtitle>Upload any tennis match for AI analysis and insights</mat-card-subtitle>
+    </mat-card-header>
+
+    <mat-card-content>
+      <form [formGroup]="uploadForm" (ngSubmit)="onSubmit()" class="upload-form">
+        
+        <div class="input-section">
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>YouTube URL or Video ID</mat-label>
+            <input matInput 
+                   formControlName="input"
+                   placeholder="Paste YouTube URL, video ID, or playlist URL"
+                   [class.error]="uploadForm.get('input')?.invalid && uploadForm.get('input')?.touched">
+            <mat-icon matSuffix>link</mat-icon>
+            <mat-hint>Example: https://www.youtube.com/watch?v=a2EPUr7gmrE or just the video ID</mat-hint>
+            <mat-error *ngIf="uploadForm.get('input')?.hasError('required')">
+              YouTube URL or Video ID is required
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <div class="submit-section">
+          <button type="submit" 
+                  mat-raised-button 
+                  color="primary" 
+                  [disabled]="uploadForm.invalid || isProcessing"
+                  class="submit-button">
+            <mat-icon *ngIf="!isProcessing">rocket_launch</mat-icon>
+            <mat-spinner *ngIf="isProcessing" diameter="20"></mat-spinner>
+            {{ isProcessing ? 'Processing...' : 'Process Video' }}
+          </button>
+          
+          <button type="button" 
+                  mat-stroked-button 
+                  color="warn" 
+                  (click)="testConnection()"
+                  [disabled]="isProcessing">
+            <mat-icon>wifi</mat-icon>
+            Test Backend
+          </button>
+        </div>
+      </form>
+
+      <div *ngIf="successMessage" class="success-message">
+        <mat-icon>check_circle</mat-icon>
+        <span>{{ successMessage }}</span>
+      </div>
+
+      <div *ngIf="errorMessage" class="error-message">
+        <mat-icon>error</mat-icon>
+        <span>{{ errorMessage }}</span>
+        <button mat-button (click)="clearError()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </div>
+
+      <div class="processing-info" *ngIf="!isProcessing">
+        <h3>What happens next:</h3>
+        <div class="steps-preview">
+          <div class="step-preview">
+            <mat-icon>download</mat-icon>
+            <span>1. Extract match commentary and analysis</span>
+          </div>
+          <div class="step-preview">
+            <mat-icon>auto_fix_high</mat-icon>
+            <span>2. Process content with AI for better insights</span>
+          </div>
+          <div class="step-preview">
+            <mat-icon>search</mat-icon>
+            <span>3. Index match data for instant searching</span>
+          </div>
+          <div class="step-preview">
+            <mat-icon>done_all</mat-icon>
+            <span>4. Ready for your questions and analysis!</span>
+          </div>
+        </div>
+        <p class="processing-note">
+          <mat-icon>info</mat-icon>
+          Processing usually takes 2-3 minutes depending on match length
+        </p>
+      </div>
+
+      <div class="debug-info" *ngIf="isProcessing">
+        <h3>Debug Information:</h3>
+        <div class="debug-steps">
+          <div class="debug-step">
+            <mat-icon>info</mat-icon>
+            <span>Check browser console for detailed logs</span>
+          </div>
+          <div class="debug-step">
+            <mat-icon>network_check</mat-icon>
+            <span>Backend URL: http://localhost:5000/api</span>
+          </div>
+          <div class="debug-step">
+            <mat-icon>api</mat-icon>
+            <span>Endpoint: /transcript/extract</span>
+          </div>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>

@@ -1,0 +1,76 @@
+<div class="processing-overlay" *ngIf="isProcessing$ | async">
+  <div class="processing-modal">
+    <div class="processing-header">
+      <mat-icon class="processing-icon">sports_tennis</mat-icon>
+      <h2>Processing Tennis Match</h2>
+      <p>Please wait while we process your video...</p>
+    </div>
+
+    <div class="processing-content" *ngIf="currentStep$ | async as step">
+      <mat-progress-bar 
+        mode="determinate" 
+        [value]="(step.step / step.total) * 100"
+        class="progress-bar">
+      </mat-progress-bar>
+
+      <div class="current-step">
+        <div class="step-info">
+          <span class="step-number">Step {{ step.step }} of {{ step.total }}</span>
+          <span class="step-message">{{ step.message }}</span>
+        </div>
+        
+        <mat-spinner 
+          *ngIf="step.status === 'processing'" 
+          diameter="24"
+          class="step-spinner">
+        </mat-spinner>
+        
+        <mat-icon 
+          *ngIf="step.status === 'completed'"
+          class="step-icon completed">
+          check_circle
+        </mat-icon>
+        
+        <mat-icon 
+          *ngIf="step.status === 'error'"
+          class="step-icon error">
+          error
+        </mat-icon>
+      </div>
+
+      <div class="steps-list">
+        <div class="step-item" 
+             *ngFor="let stepNum of [1, 2, 3, 4]"
+             [ngClass]="getStepClass(stepNum, step)">
+          
+          <mat-icon class="step-item-icon">
+            {{ getStepIcon(stepNum, getStepClass(stepNum, step)) }}
+          </mat-icon>
+          
+          <div class="step-item-content">
+            <span class="step-title">
+              <ng-container [ngSwitch]="stepNum">
+                <span *ngSwitchCase="1">Extract Transcript</span>
+                <span *ngSwitchCase="2">Clean with AI</span>
+                <span *ngSwitchCase="3">Index for Search</span>
+                <span *ngSwitchCase="4">Finalize</span>
+              </ng-container>
+            </span>
+            <span class="step-description">
+              <ng-container [ngSwitch]="stepNum">
+                <span *ngSwitchCase="1">Getting captions from YouTube</span>
+                <span *ngSwitchCase="2">Improving transcript quality</span>
+                <span *ngSwitchCase="3">Making content searchable</span>
+                <span *ngSwitchCase="4">Ready for analysis!</span>
+              </ng-container>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="processing-footer">
+      <p>This may take 2-3 minutes depending on video length</p>
+    </div>
+  </div>
+</div>

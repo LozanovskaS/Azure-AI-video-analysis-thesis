@@ -1,0 +1,16 @@
+<div class="connection-status" 
+     [ngClass]="{'connected': (isConnected$ | async), 'disconnected': !(isConnected$ | async)}">
+  
+  <div class="status-content" *ngIf="(isConnected$ | async) === false">
+    <mat-icon>cloud_off</mat-icon>
+    <span>Backend Disconnected</span>
+    <button mat-icon-button (click)="retryConnection()" matTooltip="Retry Connection">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+  
+  <div class="status-content" *ngIf="(isConnected$ | async) === true">
+    <mat-icon>cloud_done</mat-icon>
+    <span>Backend Connected</span>
+  </div>
+</div>

@@ -1,0 +1,42 @@
+<div class="app-container">
+  <!-- Simple Navigation -->
+  <nav class="nav-tabs">
+    <a class="nav-link" routerLink="/upload" routerLinkActive="active">
+      <mat-icon>cloud_upload</mat-icon>
+      <span>Upload Match</span>
+    </a>
+    
+    <a class="nav-link" routerLink="/analysis" routerLinkActive="active">
+      <mat-icon>psychology</mat-icon>
+      <span>AI Analysis</span>
+    </a>
+    
+    <a class="nav-link" routerLink="/matches" routerLinkActive="active">
+      <mat-icon>video_library</mat-icon>
+      <span>Match Library</span>
+    </a>
+
+  </nav>
+
+  <!-- Header -->
+  <div class="header-section">
+    <div class="logo-section">
+      <mat-icon class="logo-icon">sports_tennis</mat-icon>
+      <div class="logo-text">
+        <h1>Tennis AI Insights</h1>
+        <span class="version">v1.0.0</span>
+      </div>
+    </div>
+    <div class="header-description">
+      <p>Professional tennis match analysis</p>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content-area">
+    <router-outlet></router-outlet>
+  </div>
+
+  <!-- Processing Steps Overlay -->
+  <app-processing-steps></app-processing-steps>
+</div>
