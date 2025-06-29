@@ -1,12 +1,13 @@
 from flask import Flask
 from flask_cors import CORS
-from flask_migrate import Migrate  # Make sure this line exists
-from routes.transcript_routes import transcript_bp
-from routes.search_routes import search_bp
-from routes.chat_routes import chat_bp
-from routes.matches_routes import matches_bp
-from config import Config
-from models import db
+from flask_migrate import Migrate
+
+from backend.routes.transcript_routes import transcript_bp
+from backend.routes.search_routes import search_bp
+from backend.routes.chat_routes import chat_bp
+from backend.routes.matches_routes import matches_bp
+from backend.config import Config
+from backend.models import db
 
 #Flask app
 app = Flask(__name__)
