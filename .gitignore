@@ -1,0 +1,3 @@
+__pycache__/
+*.pyc
+azure_tennis_api/__pycache__/
