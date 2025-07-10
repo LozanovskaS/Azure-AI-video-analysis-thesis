@@ -35,7 +35,6 @@ def chat_with_context(user_query, context, chat_history=None):
                 "content": message["content"]
             })
             
-        # Adds the current query
         messages.append({"role": "user", "content": user_query})
         
         # Call Azure OpenAI API

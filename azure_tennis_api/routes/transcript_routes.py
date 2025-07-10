@@ -8,17 +8,12 @@ from azure_tennis_api.models import db, Match, ProcessingStatus
 from azure_tennis_api.services.youtube_service import get_transcript, extract_video_id, get_video_ids_from_playlist, get_video_title
 from azure_tennis_api.services.openai_service import clean_transcript_with_llm
 
-# Create blueprint
-
 transcript_bp = Blueprint('transcript', __name__)
 
-# Create blob storage service instance
 blob_service = BlobStorageService()
 
-def create_or_update_match(video_id, title=None):  # Remove user_id parameter
-    """Create a new match record or update existing one"""
+def create_or_update_match(video_id, title=None):
     try:
-        # Check if match already exists
         existing_match = Match.query.filter_by(video_id=video_id).first()
         
         if existing_match:
@@ -27,28 +22,21 @@ def create_or_update_match(video_id, title=None):  # Remove user_id parameter
             existing_match.updated_at = datetime.utcnow()
             if title and not existing_match.title:
                 existing_match.title = title
-            # Remove this line: if user_id: existing_match.user_id = user_id
             db.session.commit()
             return existing_match
         
-        # Get video details if not provided
         if not title:
             title = get_video_title(video_id)
         
-        # Extract player names from title
         players = extract_players_from_title(title)
-        
-        # Extract tournament info
         tournament = extract_tournament_from_title(title)
         
-        # Create new match
         new_match = Match(
             video_id=video_id,
             title=title,
             players=players,
             tournament=tournament,
             processing_status=ProcessingStatus.PROCESSING,
-            # Remove this line: user_id=user_id,
             created_at=datetime.utcnow(),
             updated_at=datetime.utcnow()
         )
@@ -65,7 +53,6 @@ def create_or_update_match(video_id, title=None):  # Remove user_id parameter
         return None
 
 def update_match_status(video_id, status, error_message=None):
-    """Update the processing status of a match"""
     try:
         match = Match.query.filter_by(video_id=video_id).first()
         
@@ -89,17 +76,15 @@ def update_match_status(video_id, status, error_message=None):
         return False
 
 def extract_players_from_title(title):
-    """Extract player names from video title using common patterns"""
     players = []
     
     if not title:
         return players
     
-    # Common patterns for tennis videos
     patterns = [
-        r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+vs?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',  # "Player1 vs Player2"
-        r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+v\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',    # "Player1 v Player2"
-        r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+-\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',    # "Player1 - Player2"
+        r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+vs?\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
+        r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+v\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
+        r'([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)\s+-\s+([A-Z][a-z]+(?:\s+[A-Z][a-z]+)*)',
     ]
     
     for pattern in patterns:
@@ -108,7 +93,6 @@ def extract_players_from_title(title):
             player1 = match.group(1).strip()
             player2 = match.group(2).strip()
             
-            # Filter out common non-player words
             non_players = ['highlights', 'match', 'final', 'semi', 'quarter', 'atp', 'wta', 'tennis']
             
             if player1.lower() not in non_players and len(player1) > 2:
@@ -121,13 +105,11 @@ def extract_players_from_title(title):
     return players
 
 def extract_tournament_from_title(title):
-    """Extract tournament name from video title"""
     if not title:
         return None
     
     title_lower = title.lower()
     
-    # Common tournament patterns
     tournaments = [
         'wimbledon', 'roland garros', 'french open', 'us open', 'australian open',
         'miami open', 'indian wells', 'masters', 'atp finals', 'wta finals',
@@ -138,7 +120,6 @@ def extract_tournament_from_title(title):
         if tournament in title_lower:
             return tournament.title()
     
-    # Look for patterns like "2024 Tournament Name"
     tournament_pattern = r'(\d{4}\s+[A-Z][a-zA-Z\s]+(?:Open|Masters|Cup|Championship))'
     match = re.search(tournament_pattern, title)
     if match:
@@ -148,7 +129,6 @@ def extract_tournament_from_title(title):
 
 @transcript_bp.route('/extract', methods=['POST'])
 def extract_transcript():
-    """Extract transcript from a YouTube video or playlist"""
     data = request.get_json()
     user_input = data.get('input')
     
@@ -161,20 +141,12 @@ def extract_transcript():
         os.makedirs(captions_dir, exist_ok=True)
         
         if parsed['type'] == 'video':
-            # Process single video
             video_id = parsed['id']
-            
-            # Get video title first
             video_title = get_video_title(video_id)
-            
-            # Create/update match record in database
             match_record = create_or_update_match(video_id, video_title)
-            
-            # Extract transcript
             transcript_result = get_transcript(video_id)
             
             if not transcript_result['success']:
-                # Update match status to failed
                 if match_record:
                     update_match_status(video_id, ProcessingStatus.FAILED, transcript_result.get('error'))
                 
@@ -183,12 +155,10 @@ def extract_transcript():
                     "message": f"❌ Failed to extract transcript: {transcript_result.get('error', 'Unknown error')}"
                 }), 400
             
-            # Save to local file as backup
             file_path = os.path.join(captions_dir, f"{video_id}.txt")
             with open(file_path, "w", encoding="utf-8") as f:
                 f.write(transcript_result['transcript'])
             
-            # Save to blob storage if enabled
             if Config.USE_BLOB_STORAGE:
                 blob_result = blob_service.upload_transcript(
                     video_id=video_id,
@@ -198,7 +168,6 @@ def extract_transcript():
                 if not blob_result['success']:
                     print(f"Warning: Failed to upload to blob storage: {blob_result.get('message')}")
             
-            # Update match status to indicate transcript extracted (still processing)
             if match_record:
                 update_match_status(video_id, ProcessingStatus.PROCESSING)
             
@@ -211,25 +180,17 @@ def extract_transcript():
             })
             
         elif parsed['type'] == 'playlist':
-            # Process playlist
             playlist_id = parsed['id']
             video_ids = get_video_ids_from_playlist(playlist_id)
             
-            # Process each video
             results = []
             for video_id in video_ids:
                 try:
-                    # Get video title
                     video_title = get_video_title(video_id)
-                    
-                    # Create/update match record
                     match_record = create_or_update_match(video_id, video_title)
-                    
-                    # Extract transcript
                     transcript_result = get_transcript(video_id)
                     
                     if not transcript_result['success']:
-                        # Update match status to failed
                         if match_record:
                             update_match_status(video_id, ProcessingStatus.FAILED, transcript_result.get('error'))
                         
@@ -242,12 +203,10 @@ def extract_transcript():
                         })
                         continue
                     
-                    # Save to local file
                     file_path = os.path.join(captions_dir, f"{video_id}.txt")
                     with open(file_path, "w", encoding="utf-8") as f:
                         f.write(transcript_result['transcript'])
                     
-                    # Save to blob storage if enabled
                     if Config.USE_BLOB_STORAGE:
                         blob_result = blob_service.upload_transcript(
                             video_id=video_id,
@@ -257,7 +216,6 @@ def extract_transcript():
                         if not blob_result['success']:
                             print(f"Warning: Failed to upload to blob storage: {blob_result.get('message')}")
                     
-                    # Update match status
                     if match_record:
                         update_match_status(video_id, ProcessingStatus.PROCESSING)
                     
@@ -290,9 +248,7 @@ def extract_transcript():
 
 @transcript_bp.route('/clean/<video_id>', methods=['POST'])
 def clean_transcript_route(video_id):
-    """Clean a transcript using Azure OpenAI"""
     try:
-        # Try to get transcript from blob storage first if enabled
         transcript_text = None
         if Config.USE_BLOB_STORAGE:
             blob_result = blob_service.download_transcript(video_id, is_clean=False)
@@ -300,11 +256,9 @@ def clean_transcript_route(video_id):
                 transcript_text = blob_result['content']
                 print(f"Retrieved transcript from blob storage for video ID: {video_id}")
         
-        # Fall back to local file if needed
         if transcript_text is None:
             captions_dir = Config.CAPTIONS_DIR
             
-            # Look for the transcript file in various possible formats
             possible_filenames = [
                 f"{video_id}.txt",
                 f"{video_id}_raw.txt"
@@ -319,7 +273,6 @@ def clean_transcript_route(video_id):
                     break
             
             if not file_path:
-                # Update match status to failed if no transcript found
                 update_match_status(video_id, ProcessingStatus.FAILED, "No transcript file found")
                 
                 return jsonify({
@@ -327,24 +280,19 @@ def clean_transcript_route(video_id):
                     "message": f"❌ No transcript file found for video ID: {video_id}"
                 }), 404
                 
-            # Read transcript file
             with open(file_path, "r", encoding="utf-8") as f:
                 transcript_text = f.read()
         
-        # Get video title
         video_title = get_video_title(video_id)
         print(f"Processing video: {video_title} (ID: {video_id})")
         
-        # Clean transcript with LLM
         print("Cleaning transcript with Azure OpenAI...")
         cleaned_transcript = clean_transcript_with_llm(transcript_text, video_title)
         
-        # Save cleaned transcript to local file as backup
         clean_file_path = os.path.join(Config.CAPTIONS_DIR, f"{video_id}_clean.txt")
         with open(clean_file_path, "w", encoding="utf-8") as f:
             f.write(cleaned_transcript)
         
-        # Save to blob storage if enabled
         if Config.USE_BLOB_STORAGE:
             blob_result = blob_service.upload_transcript(
                 video_id=video_id,
@@ -354,7 +302,6 @@ def clean_transcript_route(video_id):
             if not blob_result['success']:
                 print(f"Warning: Failed to upload cleaned transcript to blob storage: {blob_result.get('message')}")
         
-        # Update match status to completed
         update_match_status(video_id, ProcessingStatus.COMPLETED)
         
         return jsonify({
@@ -369,18 +316,15 @@ def clean_transcript_route(video_id):
         import traceback
         traceback.print_exc()
         
-        # Update match status to failed
         update_match_status(video_id, ProcessingStatus.FAILED, str(e))
         
         return jsonify({"success": False, "message": f"❌ Error: {str(e)}"}), 500
 
 @transcript_bp.route('/content/<video_id>', methods=['GET'])
 def get_transcript_content(video_id):
-    """Get content of a transcript file (raw or clean)"""
     try:
         clean = request.args.get('clean', 'false').lower() == 'true'
         
-        # Try to get content from blob storage first if enabled
         if Config.USE_BLOB_STORAGE:
             blob_result = blob_service.download_transcript(video_id, is_clean=clean)
             if blob_result.get('success', False):
@@ -394,7 +338,6 @@ def get_transcript_content(video_id):
                     "source": "blob_storage"
                 })
         
-        # Fall back to local file
         captions_dir = Config.CAPTIONS_DIR
         file_path = os.path.join(
             captions_dir, 
@@ -424,19 +367,15 @@ def get_transcript_content(video_id):
 
 @transcript_bp.route('/list', methods=['GET'])
 def list_transcripts():
-    """List all available transcripts"""
     try:
         transcripts = []
         
-        # Try to get list from blob storage if enabled
         if Config.USE_BLOB_STORAGE:
             blob_result = blob_service.list_transcripts()
             if blob_result.get('success', False):
-                # Process results from blob storage
                 for item in blob_result['transcripts']:
                     video_id = item['video_id']
                     
-                    # Skip duplicates (we'll combine info later)
                     if any(t['video_id'] == video_id for t in transcripts):
                         continue
                     
@@ -455,7 +394,6 @@ def list_transcripts():
                         'source': 'blob_storage'
                     })
         
-        # Check local files as well
         captions_dir = Config.CAPTIONS_DIR
         if os.path.exists(captions_dir):
             for filename in os.listdir(captions_dir):
@@ -463,7 +401,6 @@ def list_transcripts():
                     is_clean = '_clean' in filename
                     video_id = filename.replace('.txt', '').replace('_clean', '')
                     
-                    # If we already have this from blob storage, update the info
                     existing = next((t for t in transcripts if t['video_id'] == video_id), None)
                     if existing:
                         if is_clean:
@@ -471,7 +408,6 @@ def list_transcripts():
                         else:
                             existing['has_raw_local'] = True
                     else:
-                        # New entry for local file
                         try:
                             title = get_video_title(video_id)
                         except:

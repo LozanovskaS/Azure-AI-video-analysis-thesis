@@ -13,7 +13,7 @@ def chat_query():
     """Chat with AI using specified transcript"""
     data = request.get_json()
     query = data.get('query')
-    video_id = data.get('video_id')  # Frontend sends current video ID
+    video_id = data.get('video_id')
     conversation_history = data.get('conversation_history', [])
     
     if not query:
@@ -44,18 +44,16 @@ def chat_query():
         
         processing_time_ms = int((time.time() - start_time) * 1000)
         
-        # Save to database (optional)
         try:
             analysis_session = AnalysisSession(
                 question=query,
                 ai_response=ai_response,
-                source_match_ids=[],  # Empty since no Match model
+                source_match_ids=[],  
                 processing_time_ms=processing_time_ms
             )
             db.session.add(analysis_session)
             db.session.commit()
         except Exception:
-            # Ignore database errors for simplicity
             pass
         
         # Return response
@@ -69,7 +67,6 @@ def chat_query():
     except Exception as e:
         return jsonify({"success": False, "message": f"Error: {str(e)}"}), 500
 
-# Optional: Keep these if needed, otherwise remove
 @chat_bp.route('/analyze', methods=['POST'])
 def analyze_question():
     """Alternative endpoint for frontend compatibility"""

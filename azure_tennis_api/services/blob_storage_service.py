@@ -81,7 +81,6 @@ class BlobStorageService:
             
             transcripts = []
             for blob in blobs:
-                # Extract video_id and is_clean information from blob name
                 blob_name = blob.name
                 is_clean = blob_name.endswith("_clean.txt")
                 video_id = blob_name.replace(".txt", "").replace("_clean", "")
