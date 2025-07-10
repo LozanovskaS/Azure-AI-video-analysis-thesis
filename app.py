@@ -2,12 +2,12 @@ from flask import Flask
 from flask_cors import CORS
 from flask_migrate import Migrate
 
-from backend.routes.transcript_routes import transcript_bp
-from backend.routes.search_routes import search_bp
-from backend.routes.chat_routes import chat_bp
-from backend.routes.matches_routes import matches_bp
-from backend.config import Config
-from backend.models import db
+from azure_tennis_api.routes.transcript_routes import transcript_bp
+from azure_tennis_api.routes.search_routes import search_bp
+from azure_tennis_api.routes.chat_routes import chat_bp
+from azure_tennis_api.routes.matches_routes import matches_bp
+from azure_tennis_api.config import Config
+from azure_tennis_api.models import db
 
 #Flask app
 app = Flask(__name__)
